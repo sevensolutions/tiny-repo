@@ -16,7 +16,7 @@ COPY . .
 RUN go get -d -v
 
 # Build the binary
-RUN go build -o /go/bin/artifact-repo
+RUN go build -o /go/bin/tiny-repo
 
 # -------------------------------------------------------------
 # Runtime Stage
@@ -24,6 +24,6 @@ RUN go build -o /go/bin/artifact-repo
 
 FROM scratch
 
-COPY --from=builder /go/bin/artifact-repo /go/bin/artifact-repo
+COPY --from=builder /go/bin/tiny-repo /go/bin/tiny-repo
 
-ENTRYPOINT ["/go/bin/artifact-repo"]
+ENTRYPOINT ["/go/bin/tiny-repo"]
