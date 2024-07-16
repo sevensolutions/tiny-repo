@@ -4,9 +4,9 @@ TinyRepo is a very basic repository server for storing versioned artifacts.
 Artifacts are simply treated as blobs, so you can version anything. I'am versioning ZIP files.
 The storage backend can be a local directory or an S3 compatible service like MinIO.
 
-## Package Versions
+## Artifact Versions
 
-Every artifact has a package name and is part of a namespace.
+Every artifact has a artifact name and is part of a namespace.
 
 Artifacts are versioned using [Semantic Versioning(Semver)](https://semver.org/).
 
@@ -58,7 +58,7 @@ Otherwise the file is just called *blob*.
 GET http://localhost:8080/:namespace/:name
 ```
 
-This endpoint returns a JSON, containing all available versions of the package.
+This endpoint returns a JSON, containing all available versions of the artifact.
 
 Here is an example:
 
