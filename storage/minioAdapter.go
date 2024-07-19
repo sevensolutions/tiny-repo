@@ -44,7 +44,7 @@ func MinIO() *MinioAdapter {
 	return adapter
 }
 
-func (a *MinioAdapter) Upload(ctx context.Context, spec core.ArtifactVersionSpec, source io.Reader) error {
+func (a *MinioAdapter) Upload(ctx context.Context, spec core.ArtifactVersionSpec, target echo.Context, source io.Reader) error {
 	objectName := spec.Namespace + "/" + spec.Name + spec.Version.String() + "/blob"
 
 	_, err := a.client.PutObject(ctx, a.bucketName, objectName, source, -1, minio.PutObjectOptions{ContentType: "application/octet-stream"})

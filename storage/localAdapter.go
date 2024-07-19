@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"os"
 	ospath "path"
@@ -24,7 +25,7 @@ func LocalDirectory() *LocalDirectoryAdapter {
 	return adapter
 }
 
-func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVersionSpec, source io.Reader) error {
+func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVersionSpec, echo echo.Context, source io.Reader) error {
 	fullPath := ospath.Join(a.rootDirectory, spec.Namespace, spec.Name, spec.Version.String())
 
 	err := os.MkdirAll(fullPath, 0777)
@@ -32,9 +33,9 @@ func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVe
 		return err
 	}
 
-	fullPath = ospath.Join(fullPath, "blob")
+	blobPath := ospath.Join(fullPath, "blob")
 
-	f, err := os.Create(fullPath)
+	f, err := os.Create(blobPath)
 	if err != nil {
 		return err
 	}
@@ -43,19 +44,42 @@ func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVe
 
 	io.Copy(f, source)
 
+	metaPath := ospath.Join(fullPath, "meta.json")
+
+	err = saveMeta(metaPath, core.BlobMeta{
+		OriginalFilename: echo.Param("filename"),
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (a *LocalDirectoryAdapter) Download(ctx context.Context, spec core.ArtifactVersionSpec, target echo.Context) error {
-	fullPath := ospath.Join(a.rootDirectory, spec.Namespace, spec.Name, spec.Version.String(), "blob")
+	fullPath := ospath.Join(a.rootDirectory, spec.Namespace, spec.Name, spec.Version.String())
+	blobPath := ospath.Join(fullPath, "blob")
+	metaPath := ospath.Join(fullPath, "meta.json")
 
-	fileName := target.QueryParam("name")
-
-	if fileName == "" {
-		fileName = "blob"
+	meta, err := readMeta(metaPath)
+	if err != nil {
+		return nil
 	}
 
-	target.Attachment(fullPath, fileName)
+	filename := meta.OriginalFilename
+
+	requestedFilename := target.Param("filename")
+
+	if requestedFilename != "" {
+		filename = requestedFilename
+	}
+
+	if filename == "" {
+		filename = "blob"
+	}
+
+	target.Attachment(blobPath, filename)
 
 	return nil
 }
@@ -103,6 +127,32 @@ func (a *LocalDirectoryAdapter) DeleteVersion(spec core.ArtifactVersionSpec) err
 	fullPath := ospath.Join(a.rootDirectory, spec.Namespace, spec.Name, spec.Version.String())
 
 	return removeAll(fullPath)
+}
+
+func saveMeta(metaPath string, meta core.BlobMeta) error {
+	jsonBytes, _ := json.MarshalIndent(meta, "", "  ")
+
+	err := os.WriteFile(metaPath, jsonBytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func readMeta(metaPath string) (core.BlobMeta, error) {
+	meta := core.BlobMeta{}
+
+	jsonBytes, err := os.ReadFile(metaPath)
+	if err != nil {
+		return meta, nil
+	}
+
+	err = json.Unmarshal(jsonBytes, &meta)
+	if err != nil {
+		return meta, err
+	}
+
+	return meta, nil
 }
 
 func removeAll(dir string) error {

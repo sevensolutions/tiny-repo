@@ -31,23 +31,6 @@ func (app *App) upload(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "uploading to latest version is not allowed")
 	}
 
-	tidyKeep := 0
-	keepParam := c.QueryParam("keep")
-	if keepParam != "" {
-		keep, err := strconv.ParseInt(keepParam, 10, 32)
-		if err != nil || keep < 0 {
-			return echo.NewHTTPError(http.StatusBadRequest, "invalid keep parameter")
-		}
-		tidyKeep = int(keep)
-	}
-
-	if tidyKeep > 0 {
-		err = app.tidyVersions(spec.ArtifactSpec, tidyKeep)
-		if err != nil {
-			return err
-		}
-	}
-
 	ctx := c.Request().Context()
 
 	file, err := c.FormFile("file")
@@ -60,10 +43,29 @@ func (app *App) upload(c echo.Context) error {
 	}
 	defer src.Close()
 
-	err = app.Storage.Upload(ctx, spec, src)
+	err = app.Storage.Upload(ctx, spec, c, src)
 
 	if err != nil {
 		return err
+	}
+
+	tidyKeep := 0
+	keepParam := c.QueryParam("keep")
+	if keepParam != "" {
+		keep, err := strconv.ParseInt(keepParam, 10, 32)
+		if err != nil || keep < 0 {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid keep parameter")
+		}
+		tidyKeep = int(keep)
+	}
+
+	if tidyKeep > 0 {
+		go func() {
+			err = app.tidyVersions(spec.ArtifactSpec, tidyKeep)
+			if err != nil {
+				log.Println(err)
+			}
+		}()
 	}
 
 	return c.NoContent(http.StatusOK)
@@ -94,7 +96,10 @@ func (app *App) download(c echo.Context) error {
 		}
 	}
 
-	app.Storage.Download(ctx, spec, c)
+	err = app.Storage.Download(ctx, spec, c)
+	if err != nil {
+		return nil
+	}
 
 	return c.NoContent(http.StatusNotFound)
 }
@@ -131,6 +136,29 @@ func (app *App) getVersions(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+func (app *App) deleteVersion(c echo.Context) error {
+	spec, err := core.ParseVersionSpec(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return app.Storage.DeleteVersion(spec)
+}
+
+func (app *App) deleteArtifact(c echo.Context) error {
+	spec, err := core.ParseArtifactSpec(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	err = app.tidyVersions(spec, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (app *App) getSortedVersions(artifactSpec core.ArtifactSpec) ([]*semver.Version, error) {
 	versions, err := app.Storage.GetVersions(artifactSpec)
 	if err != nil {
@@ -158,9 +186,8 @@ func (app *App) tidyVersions(artifactSpec core.ArtifactSpec, keep int) error {
 		return err
 	}
 
-	for _, v := range versions {
-
-		if keep <= 1 {
+	for i, v := range versions {
+		if i >= keep {
 			log.Println("Deleting version", v)
 
 			spec := core.ArtifactVersionSpec{
@@ -169,8 +196,6 @@ func (app *App) tidyVersions(artifactSpec core.ArtifactSpec, keep int) error {
 			}
 
 			app.Storage.DeleteVersion(spec)
-		} else {
-			keep--
 		}
 	}
 
@@ -202,9 +227,16 @@ func (app *App) Run() {
 	e.Use(echojwt.JWT([]byte(core.GetRequiredEnvVar("JWT_SECRET"))))
 	e.Use(myMiddleware.ValidateAuth)
 
-	e.GET("/:namespace/:name/:version", app.download)
-	e.PUT("/:namespace/:name/:version", app.upload)
 	e.GET("/:namespace/:name", app.getVersions)
+	e.GET("/:namespace/:name/:version/:filename", app.download)
+	e.GET("/:namespace/:name/:version", app.download)
+
+	e.PUT("/:namespace/:name/:version/:filename", app.upload)
+	e.PUT("/:namespace/:name/:version", app.upload)
+
+	e.DELETE("/:namespace/:name", app.deleteArtifact)
+	e.DELETE("/:namespace/:name/:version/:filename", app.deleteVersion)
+	e.DELETE("/:namespace/:name/:version", app.deleteVersion)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

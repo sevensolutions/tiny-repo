@@ -24,7 +24,7 @@ TODO
 
 ### Push an Artifact (Upload)
 ```
-PUT http://localhost:8080/:namespace/:name/:version[?keep=3]
+PUT http://localhost:8080/:namespace/:name/:version[/:filename][?keep=3]
 ```
 
 This endpoint is used to push a new artifact.
@@ -43,13 +43,13 @@ curl -X PUT -H "Authorization: Bearer {token}" -F file='@filename' http://localh
 ### Pull an Artifact (Download)
 
 ```
-GET http://localhost:8080/:namespace/:name/:version|latest[?name={targetFileName}]
+GET http://localhost:8080/:namespace/:name/:version|latest[/:filename]
 ```
 
 This endpoint is used to download an artifact of a specific version.
 You may use the `latest` keyword to download the latest version.
 
-An optional target file name may be supplied using the `name`parameter to specify the name, which will be used as the filename of the attachment.
+An optional file name may be supplied using the `filename`-parameter to specify the name, which will be used as the filename of the attachment.
 Otherwise the file is just called *blob*.
 
 ### List all Versions

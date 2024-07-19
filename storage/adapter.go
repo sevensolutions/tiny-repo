@@ -11,7 +11,7 @@ import (
 )
 
 type StorageAdapter interface {
-	Upload(ctx context.Context, spec core.ArtifactVersionSpec, source io.Reader) error
+	Upload(ctx context.Context, spec core.ArtifactVersionSpec, target echo.Context, source io.Reader) error
 	Download(ctx context.Context, spec core.ArtifactVersionSpec, target echo.Context) error
 	GetVersions(artifactSpec core.ArtifactSpec) ([]*semver.Version, error)
 	DeleteVersion(spec core.ArtifactVersionSpec) error
