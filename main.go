@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"sort"
 	"strconv"
 
 	"github.com/sevensolutions/tiny-repo/core"
@@ -61,7 +60,7 @@ func (app *App) upload(c echo.Context) error {
 
 	if tidyKeep > 0 {
 		go func() {
-			err = app.tidyVersions(spec.ArtifactSpec, tidyKeep)
+			err = storage.Tidy(app.Storage, spec.ArtifactSpec, tidyKeep)
 			if err != nil {
 				log.Println(err)
 			}
@@ -80,7 +79,7 @@ func (app *App) download(c echo.Context) error {
 	}
 
 	if spec.Latest {
-		versions, err := app.getSortedVersions(spec.ArtifactSpec)
+		versions, err := storage.GetSortedVersions(app.Storage, spec.ArtifactSpec)
 		if err != nil {
 			return err
 		}
@@ -116,7 +115,7 @@ func (app *App) getVersions(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	versions, err := app.getSortedVersions(spec)
+	versions, err := storage.GetSortedVersions(app.Storage, spec)
 	if err != nil {
 		return err
 	}
@@ -151,52 +150,9 @@ func (app *App) deleteArtifact(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	err = app.tidyVersions(spec, 0)
+	err = storage.Tidy(app.Storage, spec, 0)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (app *App) getSortedVersions(artifactSpec core.ArtifactSpec) ([]*semver.Version, error) {
-	versions, err := app.Storage.GetVersions(artifactSpec)
-	if err != nil {
-		return nil, err
-	}
-
-	if versions == nil {
-		return []*semver.Version{}, nil
-	}
-
-	versions = core.FilterArray(versions, func(x *semver.Version) bool {
-		return x != nil
-	})
-
-	sort.Slice(versions, func(d1, d2 int) bool {
-		return versions[d1].Compare(versions[d2]) > 0
-	})
-
-	return versions, nil
-}
-
-func (app *App) tidyVersions(artifactSpec core.ArtifactSpec, keep int) error {
-	versions, err := app.getSortedVersions(artifactSpec)
-	if err != nil {
-		return err
-	}
-
-	for i, v := range versions {
-		if i >= keep {
-			log.Println("Deleting version", v)
-
-			spec := core.ArtifactVersionSpec{
-				ArtifactSpec: artifactSpec,
-				Version:      v,
-			}
-
-			app.Storage.DeleteVersion(spec)
-		}
 	}
 
 	return nil
