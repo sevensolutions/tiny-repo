@@ -13,7 +13,7 @@ import (
 type testStorage struct {
 }
 
-func TidyTest(t *testing.T) {
+func TestTidy(t *testing.T) {
 	storage := new(testStorage)
 
 	Tidy(storage, core.ArtifactSpec{

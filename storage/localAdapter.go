@@ -10,6 +10,7 @@ import (
 	"os"
 	ospath "path"
 	"path/filepath"
+	"sync"
 
 	"github.com/sevensolutions/tiny-repo/core"
 
@@ -19,6 +20,7 @@ import (
 
 type LocalDirectoryAdapter struct {
 	rootDirectory string
+	mutex         sync.Mutex
 }
 
 func LocalDirectory() *LocalDirectoryAdapter {
@@ -29,6 +31,9 @@ func LocalDirectory() *LocalDirectoryAdapter {
 }
 
 func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVersionSpec, echo echo.Context, source io.Reader) error {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
 	fullPath := ospath.Join(a.rootDirectory, spec.Namespace, spec.Name, spec.Version.String())
 
 	err := os.MkdirAll(fullPath, 0777)
@@ -72,6 +77,9 @@ func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVe
 }
 
 func (a *LocalDirectoryAdapter) Download(ctx context.Context, spec core.ArtifactVersionSpec, target echo.Context) error {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
 	fullPath := ospath.Join(a.rootDirectory, spec.Namespace, spec.Name, spec.Version.String())
 	blobPath := ospath.Join(fullPath, "blob")
 	metaPath := ospath.Join(fullPath, "meta.json")
@@ -99,6 +107,9 @@ func (a *LocalDirectoryAdapter) Download(ctx context.Context, spec core.Artifact
 }
 
 func (a *LocalDirectoryAdapter) GetVersions(artifactSpec core.ArtifactSpec) ([]*semver.Version, error) {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
 	fullPath := ospath.Join(a.rootDirectory, artifactSpec.Namespace, artifactSpec.Name)
 
 	exists, err := folderExists(fullPath)
@@ -138,6 +149,9 @@ func folderExists(path string) (bool, error) {
 }
 
 func (a *LocalDirectoryAdapter) DeleteVersion(spec core.ArtifactVersionSpec) error {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
 	fullPath := ospath.Join(a.rootDirectory, spec.Namespace, spec.Name, spec.Version.String())
 
 	return removeAll(fullPath)
