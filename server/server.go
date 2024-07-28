@@ -58,7 +58,7 @@ func (srv *Server) upload(c echo.Context) error {
 
 	if tidyKeep > 0 {
 		go func() {
-			err = storage.Tidy(srv.Storage, spec.ArtifactSpec, tidyKeep)
+			err = storage.Tidy(srv.Storage, spec.ArtifactSpec, tidyKeep, &spec)
 			if err != nil {
 				log.Println(err)
 			}
@@ -148,7 +148,7 @@ func (srv *Server) deleteArtifact(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	err = storage.Tidy(srv.Storage, spec, 0)
+	err = storage.Tidy(srv.Storage, spec, 0, nil)
 	if err != nil {
 		return err
 	}

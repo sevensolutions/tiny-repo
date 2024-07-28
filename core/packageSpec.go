@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -108,7 +109,7 @@ func ParseVersionSpec(value string) (ArtifactVersionSpec, error) {
 	parts := strings.Split(value, "/")
 
 	if len(parts) != 3 {
-		return ArtifactVersionSpec{}, errors.New("Invalid version " + value)
+		return ArtifactVersionSpec{}, fmt.Errorf("invalid version %s", value)
 	}
 
 	version := parts[2]

@@ -6,13 +6,19 @@ import (
 	"github.com/sevensolutions/tiny-repo/core"
 )
 
-func Tidy(storage StorageAdapter, artifactSpec core.ArtifactSpec, keep int) error {
+func Tidy(storage StorageAdapter, artifactSpec core.ArtifactSpec, keep int, belowVersion *core.ArtifactVersionSpec) error {
 	versions, err := GetSortedVersions(storage, artifactSpec)
 	if err != nil {
 		return err
 	}
 
-	for i, v := range versions {
+	i := 0
+
+	for _, v := range versions {
+		if belowVersion != nil && v.Compare(belowVersion.Version) > 0 {
+			continue
+		}
+
 		if i >= keep {
 			log.Println("Deleting version", v)
 
@@ -23,6 +29,8 @@ func Tidy(storage StorageAdapter, artifactSpec core.ArtifactSpec, keep int) erro
 
 			storage.DeleteVersion(spec)
 		}
+
+		i++
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -71,11 +72,16 @@ func downloadFile(filepath string, url string) (err error) {
 	}
 
 	contentDisposition := resp.Header.Get("Content-Disposition")
-
-	println(contentDisposition)
+	if contentDisposition == "" {
+		return errors.New("missing Content-Disposition header")
+	}
 
 	_, params, err := mime.ParseMediaType(contentDisposition)
 	filename := params["filename"]
+
+	if filename == "" {
+		return errors.New("missing filename in Content-Disposition header")
+	}
 
 	println(filename)
 

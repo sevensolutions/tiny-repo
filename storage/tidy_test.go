@@ -19,7 +19,7 @@ func TidyTest(t *testing.T) {
 	Tidy(storage, core.ArtifactSpec{
 		Namespace: "",
 		Name:      "",
-	}, 3)
+	}, 3, nil)
 }
 
 func (s *testStorage) Upload(ctx context.Context, spec core.ArtifactVersionSpec, target echo.Context, source io.Reader) error {
