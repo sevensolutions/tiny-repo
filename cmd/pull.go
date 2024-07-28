@@ -92,7 +92,7 @@ func downloadFile(filepath string, url string) (err error) {
 	}
 	defer out.Close()
 
-	// Writer the body to file
+	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		return err

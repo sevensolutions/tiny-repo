@@ -170,10 +170,12 @@ func createStorageAdapter() storage.StorageAdapter {
 }
 
 func (srv *Server) Run() {
+	printBanner()
 
 	srv.Storage = createStorageAdapter()
 
 	e := echo.New()
+	e.HideBanner = true
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -193,4 +195,17 @@ func (srv *Server) Run() {
 	e.DELETE("/:namespace/:name/:version", srv.deleteVersion)
 
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func printBanner() {
+	println(`
+  _____ _             ____                  
+ |_   _(_)_ __  _   _|  _ \ ___ _ __   ___  
+   | | | | '_ \| | | | |_) / _ \ '_ \ / _ \ 
+   | | | | | | | |_| |  _ <  __/ |_) | (_) |
+   |_| |_|_| |_|\__, |_| \_\___| .__/ \___/ 
+                |___/          |_|          
+
+  sevensolutions - TinyRepo
+	`)
 }

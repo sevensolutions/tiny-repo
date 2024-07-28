@@ -26,4 +26,4 @@ FROM scratch
 
 COPY --from=builder /go/bin/tiny-repo /go/bin/tiny-repo
 
-ENTRYPOINT ["/go/bin/tiny-repo"]
+ENTRYPOINT ["/go/bin/tiny-repo", "serve"]

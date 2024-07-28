@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// serveCmd represents the add command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Run TinyRepo as server",

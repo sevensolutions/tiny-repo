@@ -1,0 +1,9 @@
+services:
+  tiny-repo:
+    image: tiny-repo
+    ports:
+      - "8080:8080"
+    environment:
+      STORAGE_TYPE: "Local"
+      STORAGE_DIRECTORY: "/data"
+      JWT_SECRET: "your-256-bit-secret"
