@@ -2,7 +2,10 @@ package storage
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	ospath "path"
@@ -44,10 +47,21 @@ func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVe
 
 	io.Copy(f, source)
 
+	f.Seek(0, 0)
+
+	hasher := sha256.New()
+
+	if _, err := io.Copy(hasher, f); err != nil {
+		return err
+	}
+
+	hash := fmt.Sprintf("sha256:%s", hex.EncodeToString(hasher.Sum(nil)))
+
 	metaPath := ospath.Join(fullPath, "meta.json")
 
 	err = saveMeta(metaPath, core.BlobMeta{
 		OriginalFilename: echo.Param("filename"),
+		Hash:             hash,
 	})
 
 	if err != nil {
