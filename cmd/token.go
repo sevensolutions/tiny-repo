@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -10,6 +11,8 @@ import (
 )
 
 var namespace string
+var name string
+var prefix string
 
 var tokenCmd = &cobra.Command{
 	Use:   "token",
@@ -23,10 +26,20 @@ var tokenCreateCmd = &cobra.Command{
 	Long:  `Create a new access token`,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		if name == "" {
+			name = "Unknown"
+		}
+		if prefix == "" {
+			name = "/"
+		}
+		if !strings.HasPrefix(prefix, "/") {
+			prefix = "/" + prefix
+		}
+
 		jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"namespace": namespace,
-			"name":      "Unknown",
-			"prefix":    "/",
+			"name":      name,
+			"prefix":    prefix,
 			"iat":       time.Now().Unix(),
 		})
 
@@ -77,6 +90,8 @@ func init() {
 	rootCmd.AddCommand(tokenCmd)
 
 	tokenCreateCmd.PersistentFlags().StringVar(&namespace, "namespace", "", "The namespace the token should have access to")
+	tokenCreateCmd.PersistentFlags().StringVar(&name, "name", "", "The name for the token")
+	tokenCreateCmd.PersistentFlags().StringVar(&prefix, "prefix", "", "The prefix the token should have access to")
 
 	tokenCmd.AddCommand(tokenCreateCmd)
 	tokenCmd.AddCommand(tokenInspectCmd)
