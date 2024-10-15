@@ -64,8 +64,15 @@ func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVe
 
 	metaPath := ospath.Join(fullPath, "meta.json")
 
+	contentTypeHeaders := echo.Request().Header["Content-Type"]
+	var contentType string
+	if len(contentTypeHeaders) > 0 {
+		contentType = contentTypeHeaders[0]
+	}
+
 	err = saveMeta(metaPath, core.BlobMeta{
-		OriginalFilename: echo.Param("filename"),
+		OriginalFilename: echo.Request().URL.Query().Get("filename"),
+		ContentType:      contentType,
 		Hash:             hash,
 	})
 
@@ -91,7 +98,7 @@ func (a *LocalDirectoryAdapter) Download(ctx context.Context, spec core.Artifact
 
 	filename := meta.OriginalFilename
 
-	requestedFilename := target.Param("filename")
+	requestedFilename := target.Request().URL.Query().Get("filename")
 
 	if requestedFilename != "" {
 		filename = requestedFilename
@@ -99,6 +106,10 @@ func (a *LocalDirectoryAdapter) Download(ctx context.Context, spec core.Artifact
 
 	if filename == "" {
 		filename = "blob"
+	}
+
+	if meta.ContentType != "" {
+		target.Response().Header().Add("Content-Type", meta.ContentType)
 	}
 
 	target.Attachment(blobPath, filename)

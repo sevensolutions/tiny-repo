@@ -25,6 +25,8 @@ var tokenCreateCmd = &cobra.Command{
 
 		jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"namespace": namespace,
+			"name":      "Unknown",
+			"prefix":    "/",
 			"iat":       time.Now().Unix(),
 		})
 

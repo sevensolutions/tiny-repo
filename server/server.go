@@ -30,17 +30,7 @@ func (srv *Server) upload(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	file, err := c.FormFile("file")
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing file")
-	}
-	src, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	err = srv.Storage.Upload(ctx, spec, c, src)
+	err = srv.Storage.Upload(ctx, spec, c, c.Request().Body)
 
 	if err != nil {
 		return err

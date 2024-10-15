@@ -32,12 +32,12 @@ This endpoint is used to push a new artifact.
 You may optionally specify a `keep`-parameter to automatically delete old version. The default is 0, which means all versions will be kept.
 A value of 1 will keep just 1 version, including the one currently beeing pushed.
 
-The request must be sent as multipart-form-data containing a single field called `file`.
+The content of the blob needs to bent in the request body directly.
 
 Example cURL call:
 
 ```bash
-curl -X PUT -H "Authorization: Bearer {token}" -F file='@filename' http://localhost:8080/foo/bar/1.0.0
+curl -X PUT -H "Authorization: Bearer {token}" --data-binary=@<filePath> http://localhost:8080/foo/bar/1.0.0
 ```
 
 ### Pull an Artifact (Download)
