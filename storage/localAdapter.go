@@ -71,7 +71,7 @@ func (a *LocalDirectoryAdapter) Upload(ctx context.Context, spec core.ArtifactVe
 	}
 
 	err = saveMeta(metaPath, core.BlobMeta{
-		OriginalFilename: echo.Request().URL.Query().Get("filename"),
+		OriginalFilename: echo.Param("filename"),
 		ContentType:      contentType,
 		Hash:             hash,
 	})
@@ -98,7 +98,7 @@ func (a *LocalDirectoryAdapter) Download(ctx context.Context, spec core.Artifact
 
 	filename := meta.OriginalFilename
 
-	requestedFilename := target.Request().URL.Query().Get("filename")
+	requestedFilename := target.Param("filename")
 
 	if requestedFilename != "" {
 		filename = requestedFilename
